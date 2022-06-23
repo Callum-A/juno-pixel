@@ -3,12 +3,37 @@
   "title": "InstantiateMsg",
   "type": "object",
   "required": [
-    "count"
+    "admin_address",
+    "cooldown",
+    "height",
+    "width"
   ],
   "properties": {
-    "count": {
+    "admin_address": {
+      "type": "string"
+    },
+    "cooldown": {
       "type": "integer",
-      "format": "int32"
+      "format": "uint64",
+      "minimum": 0.0
+    },
+    "end_height": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "format": "uint64",
+      "minimum": 0.0
+    },
+    "height": {
+      "type": "integer",
+      "format": "uint64",
+      "minimum": 0.0
+    },
+    "width": {
+      "type": "integer",
+      "format": "uint64",
+      "minimum": 0.0
     }
   }
 }

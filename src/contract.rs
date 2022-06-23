@@ -1,10 +1,10 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
+use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 use cw2::set_contract_version;
 
 use crate::error::ContractError;
-use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use crate::msg::{CooldownResponse, ExecuteMsg, GridResponse, InstantiateMsg, QueryMsg};
 use crate::state::{Color, Config, Dimensions, CONFIG, COOLDOWNS, DIMENSIONS, GRID};
 
 // version info for migration info
@@ -104,9 +104,21 @@ pub fn execute_draw(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(_deps: Deps, _env: Env, _msg: QueryMsg) -> StdResult<Binary> {
-    // match msg {
-    //     _ => todo!(),
-    // }
-    todo!()
+pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
+    match msg {
+        QueryMsg::GetConfig {} => to_binary(&CONFIG.load(deps.storage)?),
+        QueryMsg::GetDimensions {} => to_binary(&DIMENSIONS.load(deps.storage)?),
+        QueryMsg::GetGrid {} => to_binary(&GridResponse {
+            grid: GRID.load(deps.storage)?,
+        }),
+        QueryMsg::GetCooldown { address } => query_cooldown(deps, address),
+    }
+}
+
+pub fn query_cooldown(deps: Deps, address: String) -> StdResult<Binary> {
+    let address = deps.api.addr_validate(&address).unwrap();
+    let current_cooldown = COOLDOWNS
+        .may_load(deps.storage, &address)?
+        .unwrap_or_default();
+    to_binary(&CooldownResponse { current_cooldown })
 }

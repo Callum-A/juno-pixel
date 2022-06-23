@@ -1,15 +1,35 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "ExecuteMsg",
-  "anyOf": [
+  "oneOf": [
     {
       "type": "object",
       "required": [
-        "increment"
+        "draw"
       ],
       "properties": {
-        "increment": {
-          "type": "object"
+        "draw": {
+          "type": "object",
+          "required": [
+            "color",
+            "x",
+            "y"
+          ],
+          "properties": {
+            "color": {
+              "$ref": "#/definitions/Color"
+            },
+            "x": {
+              "type": "integer",
+              "format": "uint64",
+              "minimum": 0.0
+            },
+            "y": {
+              "type": "integer",
+              "format": "uint64",
+              "minimum": 0.0
+            }
+          }
         }
       },
       "additionalProperties": false
@@ -17,23 +37,78 @@
     {
       "type": "object",
       "required": [
-        "reset"
+        "update_admin"
       ],
       "properties": {
-        "reset": {
+        "update_admin": {
           "type": "object",
           "required": [
-            "count"
+            "new_admin"
           ],
           "properties": {
-            "count": {
+            "new_admin": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "update_cooldown"
+      ],
+      "properties": {
+        "update_cooldown": {
+          "type": "object",
+          "required": [
+            "new_cooldown"
+          ],
+          "properties": {
+            "new_cooldown": {
               "type": "integer",
-              "format": "int32"
+              "format": "uint64",
+              "minimum": 0.0
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "update_end_height"
+      ],
+      "properties": {
+        "update_end_height": {
+          "type": "object",
+          "properties": {
+            "new_end_height": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "uint64",
+              "minimum": 0.0
             }
           }
         }
       },
       "additionalProperties": false
     }
-  ]
+  ],
+  "definitions": {
+    "Color": {
+      "type": "string",
+      "enum": [
+        "b_l_a_c_k",
+        "w_h_i_t_e",
+        "r_e_d",
+        "g_r_e_e_n",
+        "b_l_u_e"
+      ]
+    }
+  }
 }
