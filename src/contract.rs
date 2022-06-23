@@ -24,8 +24,7 @@ pub fn instantiate(
 
     if let Some(end_height) = msg.end_height {
         if end_height <= env.block.height {
-            // TODO: improve error
-            return Err(ContractError::Unauthorized {});
+            return Err(ContractError::InvalidEndHeight {});
         }
     }
 
@@ -82,19 +81,16 @@ pub fn execute_draw(
         .may_load(deps.storage, &info.sender)?
         .unwrap_or_default();
     if x > dimensions.width || y > dimensions.height {
-        // TODO: improve error
-        return Err(ContractError::Unauthorized {});
+        return Err(ContractError::InvalidCoordinates {});
     }
 
     if env.block.height < user_cooldown {
-        // TODO: improve error
-        return Err(ContractError::Unauthorized {});
+        return Err(ContractError::StillOnCooldown {});
     }
 
     if let Some(end_height) = config.end_height {
         if env.block.height > end_height {
-            // TODO: improve error
-            return Err(ContractError::Unauthorized {});
+            return Err(ContractError::EndHeightReached {});
         }
     }
 
@@ -159,8 +155,7 @@ pub fn execute_update_end_height(
 
     if let Some(end_height) = new_end_height {
         if end_height <= env.block.height {
-            // TODO: improve error
-            return Err(ContractError::Unauthorized {});
+            return Err(ContractError::InvalidEndHeight {});
         }
     }
 
