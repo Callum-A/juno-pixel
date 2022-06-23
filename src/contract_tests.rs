@@ -1,9 +1,9 @@
 #[cfg(test)]
 mod tests {
     use crate::contract::{execute, instantiate, query};
-    use crate::msg::ExecuteMsg::{UpdateAdmin, UpdateCooldown, UpdateEndHeight};
+    use crate::msg::ExecuteMsg::{Draw, UpdateAdmin, UpdateCooldown, UpdateEndHeight};
     use crate::msg::{CooldownResponse, GridResponse, InstantiateMsg, QueryMsg};
-    use crate::state::{Config, Dimensions};
+    use crate::state::{Color, Config, Dimensions};
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
     use cosmwasm_std::{from_binary, Addr, Deps, Env};
 
@@ -28,7 +28,7 @@ mod tests {
         from_binary(&bin).unwrap()
     }
 
-    fn _query_cooldown(deps: Deps, env: Env, address: String) -> CooldownResponse {
+    fn query_cooldown(deps: Deps, env: Env, address: String) -> CooldownResponse {
         let msg = QueryMsg::GetCooldown { address };
         let bin = query(deps, env, msg).unwrap();
         from_binary(&bin).unwrap()
@@ -83,6 +83,100 @@ mod tests {
         let grid = query_grid(deps.as_ref(), env);
         assert_eq!(grid.grid.len(), 100);
         assert_eq!(grid.grid[0].len(), 100);
+    }
+
+    #[test]
+    fn test_draw() {
+        let mut deps = mock_dependencies();
+        let mut env = mock_env();
+        let info = mock_info(ADDR1, &[]);
+        let start_height = env.block.height;
+        let end_height = start_height + 200;
+
+        // Instantiate with ADDR1 as admin
+        let msg = InstantiateMsg {
+            admin_address: ADDR1.to_string(),
+            cooldown: 30,
+            end_height: Some(end_height),
+            width: 100,
+            height: 100,
+        };
+        instantiate(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+
+        // Query cooldown when we have not drawn, should return 0
+        let cooldown = query_cooldown(deps.as_ref(), env.clone(), ADDR1.to_string());
+        assert_eq!(cooldown.current_cooldown, 0);
+
+        // Try and draw with invalid dimensions
+        let msg = Draw {
+            x: 101,
+            y: 101,
+            color: Color::BLACK,
+        };
+        execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap_err();
+
+        // Successful draw ADDR1
+        let msg = Draw {
+            x: 0,
+            y: 0,
+            color: Color::BLACK,
+        };
+        execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+        // Successful draw ADDR2
+        let msg = Draw {
+            x: 1,
+            y: 0,
+            color: Color::RED,
+        };
+        execute(deps.as_mut(), env.clone(), mock_info(ADDR2, &[]), msg).unwrap();
+
+        // Query cooldown should be start_height + 30
+        let cooldown = query_cooldown(deps.as_ref(), env.clone(), ADDR1.to_string());
+        assert_eq!(cooldown.current_cooldown, start_height + 30);
+        // Query cooldown should be start_height + 30
+        let cooldown = query_cooldown(deps.as_ref(), env.clone(), ADDR2.to_string());
+        assert_eq!(cooldown.current_cooldown, start_height + 30);
+
+        let grid = query_grid(deps.as_ref(), env.clone());
+        assert_eq!(grid.grid[0][0], Color::BLACK);
+        assert_eq!(grid.grid[1][0], Color::RED);
+
+        // Try and draw prior to cooldown, will error
+        let msg = Draw {
+            x: 0,
+            y: 0,
+            color: Color::BLACK,
+        };
+        execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap_err();
+
+        // Override existing color after cooldown
+        env.block.height = start_height + 30;
+        let msg = Draw {
+            x: 0,
+            y: 0,
+            color: Color::RED,
+        };
+        execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+
+        // Query cooldown should be start_height + 30 + 30, as we have now drawn twice
+        let cooldown = query_cooldown(deps.as_ref(), env.clone(), ADDR1.to_string());
+        assert_eq!(cooldown.current_cooldown, start_height + 30 + 30);
+
+        let grid = query_grid(deps.as_ref(), env.clone());
+        assert_eq!(grid.grid[0][0], Color::RED);
+
+        // Try and draw after the end_height
+        env.block.height = end_height + 1;
+        let msg = Draw {
+            x: 0,
+            y: 0,
+            color: Color::GREEN,
+        };
+        execute(deps.as_mut(), env.clone(), info, msg).unwrap_err();
+
+        // Grid unchanged
+        let grid = query_grid(deps.as_ref(), env);
+        assert_eq!(grid.grid[0][0], Color::RED);
     }
 
     #[test]
