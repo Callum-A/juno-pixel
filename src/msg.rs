@@ -15,7 +15,7 @@ pub struct InstantiateMsg {
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
     Draw { x: u64, y: u64, color: Color },
-    UpdateAdmin { new_admin: String },
+    UpdateAdmin { new_admin_address: String },
     UpdateCooldown { new_cooldown: u64 },
     UpdateEndHeight { new_end_height: Option<u64> },
 }

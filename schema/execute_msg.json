@@ -43,10 +43,10 @@
         "update_admin": {
           "type": "object",
           "required": [
-            "new_admin"
+            "new_admin_address"
           ],
           "properties": {
-            "new_admin": {
+            "new_admin_address": {
               "type": "string"
             }
           }

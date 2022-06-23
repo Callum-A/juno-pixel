@@ -56,7 +56,15 @@ pub fn execute(
 ) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::Draw { x, y, color } => execute_draw(deps, env, info, x, y, color),
-        _ => todo!(),
+        ExecuteMsg::UpdateAdmin { new_admin_address } => {
+            execute_update_admin(deps, env, info, new_admin_address)
+        }
+        ExecuteMsg::UpdateCooldown { new_cooldown } => {
+            execute_update_cooldown(deps, env, info, new_cooldown)
+        }
+        ExecuteMsg::UpdateEndHeight { new_end_height } => {
+            execute_update_end_height(deps, env, info, new_end_height)
+        }
     }
 }
 
@@ -101,6 +109,65 @@ pub fn execute_draw(
     )?;
 
     Ok(Response::new().add_attribute("action", "draw"))
+}
+
+pub fn execute_update_admin(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    new_admin_address: String,
+) -> Result<Response, ContractError> {
+    let mut config = CONFIG.load(deps.storage)?;
+    if info.sender != config.admin_address {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    let validated_admin_address = deps.api.addr_validate(&new_admin_address)?;
+    config.admin_address = validated_admin_address;
+    CONFIG.save(deps.storage, &config)?;
+
+    Ok(Response::new().add_attribute("action", "update_admin"))
+}
+
+pub fn execute_update_cooldown(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    new_cooldown: u64,
+) -> Result<Response, ContractError> {
+    let mut config = CONFIG.load(deps.storage)?;
+    if info.sender != config.admin_address {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    config.cooldown = new_cooldown;
+    CONFIG.save(deps.storage, &config)?;
+
+    Ok(Response::new().add_attribute("action", "update_cooldown"))
+}
+
+pub fn execute_update_end_height(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    new_end_height: Option<u64>,
+) -> Result<Response, ContractError> {
+    let mut config = CONFIG.load(deps.storage)?;
+    if info.sender != config.admin_address {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    if let Some(end_height) = new_end_height {
+        if end_height <= env.block.height {
+            // TODO: improve error
+            return Err(ContractError::Unauthorized {});
+        }
+    }
+
+    config.end_height = new_end_height;
+    CONFIG.save(deps.storage, &config)?;
+
+    Ok(Response::new().add_attribute("action", "update_end_height"))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
