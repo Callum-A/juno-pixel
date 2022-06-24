@@ -111,7 +111,7 @@ mod tests {
         let msg = Draw {
             x: 101,
             y: 101,
-            color: Color::BLACK,
+            color: Color::Black,
         };
         execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap_err();
 
@@ -119,14 +119,14 @@ mod tests {
         let msg = Draw {
             x: 0,
             y: 0,
-            color: Color::BLACK,
+            color: Color::Black,
         };
         execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
         // Successful draw ADDR2
         let msg = Draw {
             x: 1,
             y: 0,
-            color: Color::RED,
+            color: Color::Red,
         };
         execute(deps.as_mut(), env.clone(), mock_info(ADDR2, &[]), msg).unwrap();
 
@@ -138,14 +138,14 @@ mod tests {
         assert_eq!(cooldown.current_cooldown, start_height + 30);
 
         let grid = query_grid(deps.as_ref(), env.clone());
-        assert_eq!(grid.grid[0][0], Color::BLACK);
-        assert_eq!(grid.grid[1][0], Color::RED);
+        assert_eq!(grid.grid[0][0], Color::Black);
+        assert_eq!(grid.grid[1][0], Color::Red);
 
         // Try and draw prior to cooldown, will error
         let msg = Draw {
             x: 0,
             y: 0,
-            color: Color::BLACK,
+            color: Color::Black,
         };
         execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap_err();
 
@@ -154,7 +154,7 @@ mod tests {
         let msg = Draw {
             x: 0,
             y: 0,
-            color: Color::RED,
+            color: Color::Red,
         };
         execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
 
@@ -163,20 +163,20 @@ mod tests {
         assert_eq!(cooldown.current_cooldown, start_height + 30 + 30);
 
         let grid = query_grid(deps.as_ref(), env.clone());
-        assert_eq!(grid.grid[0][0], Color::RED);
+        assert_eq!(grid.grid[0][0], Color::Red);
 
         // Try and draw after the end_height
         env.block.height = end_height + 1;
         let msg = Draw {
             x: 0,
             y: 0,
-            color: Color::GREEN,
+            color: Color::Green,
         };
         execute(deps.as_mut(), env.clone(), info, msg).unwrap_err();
 
         // Grid unchanged
         let grid = query_grid(deps.as_ref(), env);
-        assert_eq!(grid.grid[0][0], Color::RED);
+        assert_eq!(grid.grid[0][0], Color::Red);
     }
 
     #[test]

@@ -37,7 +37,7 @@ pub fn instantiate(
         width: msg.width,
         height: msg.height,
     };
-    let grid = vec![vec![Color::WHITE; msg.height as usize]; msg.width as usize];
+    let grid = vec![vec![Color::White; msg.height as usize]; msg.width as usize];
 
     CONFIG.save(deps.storage, &config)?;
     DIMENSIONS.save(deps.storage, &dimensions)?;

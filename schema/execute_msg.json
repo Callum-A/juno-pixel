@@ -103,11 +103,22 @@
     "Color": {
       "type": "string",
       "enum": [
-        "b_l_a_c_k",
-        "w_h_i_t_e",
-        "r_e_d",
-        "g_r_e_e_n",
-        "b_l_u_e"
+        "white",
+        "light_gray",
+        "gray",
+        "black",
+        "pink",
+        "red",
+        "orange",
+        "brown",
+        "yellow",
+        "light_green",
+        "green",
+        "turquoise",
+        "light_blue",
+        "blue",
+        "magenta",
+        "purple"
       ]
     }
   }
