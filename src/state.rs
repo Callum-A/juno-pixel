@@ -18,7 +18,9 @@ pub struct Config {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Dimensions {
+    /// Number of chunks wide
     pub width: u64,
+    /// Number of chunks high
     pub height: u64,
 }
 
@@ -52,5 +54,6 @@ pub struct PixelInfo {
 
 pub const CONFIG: Item<Config> = Item::new("config");
 pub const DIMENSIONS: Item<Dimensions> = Item::new("dimensions");
-pub const GRID: Item<Vec<Vec<PixelInfo>>> = Item::new("grid");
+// A chunk is a 16x16 group of pixels
+pub const CHUNKS: Map<(u64, u64), Vec<Vec<PixelInfo>>> = Map::new("chunks");
 pub const COOLDOWNS: Map<&Addr, u64> = Map::new("cooldowns");

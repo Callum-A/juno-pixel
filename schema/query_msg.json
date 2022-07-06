@@ -5,11 +5,27 @@
     {
       "type": "object",
       "required": [
-        "get_grid"
+        "get_chunk"
       ],
       "properties": {
-        "get_grid": {
-          "type": "object"
+        "get_chunk": {
+          "type": "object",
+          "required": [
+            "x",
+            "y"
+          ],
+          "properties": {
+            "x": {
+              "type": "integer",
+              "format": "uint64",
+              "minimum": 0.0
+            },
+            "y": {
+              "type": "integer",
+              "format": "uint64",
+              "minimum": 0.0
+            }
+          }
         }
       },
       "additionalProperties": false
