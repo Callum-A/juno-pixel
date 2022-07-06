@@ -81,8 +81,8 @@ mod tests {
             }
         );
         let grid = query_chunk(deps.as_ref(), env, 0, 0);
-        assert_eq!(grid.grid.len(), 16);
-        assert_eq!(grid.grid[0].len(), 16);
+        assert_eq!(grid.grid.len(), 32);
+        assert_eq!(grid.grid[0].len(), 32);
     }
 
     #[test]
@@ -111,8 +111,8 @@ mod tests {
         let msg = Draw {
             chunk_x: 0,
             chunk_y: 0,
-            x: 16,
-            y: 16,
+            x: 32,
+            y: 32,
             color: Color::Black,
         };
         execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap_err();
@@ -162,7 +162,7 @@ mod tests {
             }
         );
         assert_eq!(
-            grid.grid[1][0],
+            grid.grid[0][1],
             PixelInfo {
                 color: Color::Red,
                 painter: Some(Addr::unchecked(ADDR2.to_string()))
