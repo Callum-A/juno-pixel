@@ -72,8 +72,8 @@ PIXEL_INIT='{
   "admin_address": "'"$DEFAULT_DEV_ADDRESS"'",
   "cooldown": 1,
   "end_height": null,
-  "width": 100,
-  "height": 100
+  "width": 10,
+  "height": 10
 }'
 echo "$PIXEL_INIT" | jq .
 # instantiate
@@ -124,5 +124,7 @@ $BINARY tx wasm execute "$PIXEL_CONTRACT" "$DRAW" --from test-user $TXFLAG
 # Show that this pixel is yellow
 GRID=$($BINARY query wasm contract-state smart "$PIXEL_CONTRACT" "$GET_GRID" --output json | jq -r .data.grid[1][0])
 echo "$GRID" | jq .
+
+echo "NEXT_PUBLIC_PIXEL_ADDRESS=$PIXEL_CONTRACT"
 
 

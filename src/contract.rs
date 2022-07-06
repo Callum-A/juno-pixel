@@ -10,7 +10,7 @@ use crate::state::{Color, Config, Dimensions, PixelInfo, CHUNKS, CONFIG, COOLDOW
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:juno-pixel";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
-const CHUNK_SIZE: u64 = 16;
+const CHUNK_SIZE: u64 = 32;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -119,7 +119,7 @@ pub fn execute_draw(
     let mut chunk = CHUNKS
         .may_load(deps.storage, (chunk_x, chunk_y))?
         .unwrap_or(default);
-    chunk[x as usize][y as usize] = PixelInfo {
+    chunk[y as usize][x as usize] = PixelInfo {
         color,
         painter: Some(info.sender.clone()),
     };
