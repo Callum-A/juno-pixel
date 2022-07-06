@@ -5,7 +5,7 @@ use cw2::set_contract_version;
 
 use crate::error::ContractError;
 use crate::msg::{CooldownResponse, ExecuteMsg, GridResponse, InstantiateMsg, QueryMsg};
-use crate::state::{Color, Config, Dimensions, CONFIG, COOLDOWNS, DIMENSIONS, GRID};
+use crate::state::{Color, Config, Dimensions, PixelInfo, CONFIG, COOLDOWNS, DIMENSIONS, GRID};
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:juno-pixel";
@@ -37,7 +37,16 @@ pub fn instantiate(
         width: msg.width,
         height: msg.height,
     };
-    let grid = vec![vec![Color::White; msg.height as usize]; msg.width as usize];
+    let grid = vec![
+        vec![
+            PixelInfo {
+                color: Color::White,
+                painter: None
+            };
+            msg.height as usize
+        ];
+        msg.width as usize
+    ];
 
     CONFIG.save(deps.storage, &config)?;
     DIMENSIONS.save(deps.storage, &dimensions)?;
@@ -95,7 +104,10 @@ pub fn execute_draw(
     }
 
     let mut grid = GRID.load(deps.storage)?;
-    grid[x as usize][y as usize] = color;
+    grid[x as usize][y as usize] = PixelInfo {
+        color,
+        painter: Some(info.sender.clone()),
+    };
 
     GRID.save(deps.storage, &grid)?;
     COOLDOWNS.save(

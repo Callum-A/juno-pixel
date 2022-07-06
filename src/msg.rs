@@ -1,4 +1,4 @@
-use crate::state::Color;
+use crate::state::{Color, PixelInfo};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -31,7 +31,7 @@ pub enum QueryMsg {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct GridResponse {
-    pub grid: Vec<Vec<Color>>,
+    pub grid: Vec<Vec<PixelInfo>>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

@@ -3,7 +3,7 @@ mod tests {
     use crate::contract::{execute, instantiate, query};
     use crate::msg::ExecuteMsg::{Draw, UpdateAdmin, UpdateCooldown, UpdateEndHeight};
     use crate::msg::{CooldownResponse, GridResponse, InstantiateMsg, QueryMsg};
-    use crate::state::{Color, Config, Dimensions};
+    use crate::state::{Color, Config, Dimensions, PixelInfo};
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
     use cosmwasm_std::{from_binary, Addr, Deps, Env};
 
@@ -138,8 +138,20 @@ mod tests {
         assert_eq!(cooldown.current_cooldown, start_height + 30);
 
         let grid = query_grid(deps.as_ref(), env.clone());
-        assert_eq!(grid.grid[0][0], Color::Black);
-        assert_eq!(grid.grid[1][0], Color::Red);
+        assert_eq!(
+            grid.grid[0][0],
+            PixelInfo {
+                color: Color::Black,
+                painter: Some(Addr::unchecked(ADDR1.to_string()))
+            }
+        );
+        assert_eq!(
+            grid.grid[1][0],
+            PixelInfo {
+                color: Color::Red,
+                painter: Some(Addr::unchecked(ADDR2.to_string()))
+            }
+        );
 
         // Try and draw prior to cooldown, will error
         let msg = Draw {
@@ -147,7 +159,7 @@ mod tests {
             y: 0,
             color: Color::Black,
         };
-        execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap_err();
+        execute(deps.as_mut(), env.clone(), mock_info(ADDR2, &[]), msg).unwrap_err();
 
         // Override existing color after cooldown
         env.block.height = start_height + 30;
@@ -156,14 +168,20 @@ mod tests {
             y: 0,
             color: Color::Red,
         };
-        execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+        execute(deps.as_mut(), env.clone(), mock_info(ADDR2, &[]), msg).unwrap();
 
         // Query cooldown should be start_height + 30 + 30, as we have now drawn twice
-        let cooldown = query_cooldown(deps.as_ref(), env.clone(), ADDR1.to_string());
+        let cooldown = query_cooldown(deps.as_ref(), env.clone(), ADDR2.to_string());
         assert_eq!(cooldown.current_cooldown, start_height + 30 + 30);
 
         let grid = query_grid(deps.as_ref(), env.clone());
-        assert_eq!(grid.grid[0][0], Color::Red);
+        assert_eq!(
+            grid.grid[0][0],
+            PixelInfo {
+                color: Color::Red,
+                painter: Some(Addr::unchecked(ADDR2.to_string()))
+            }
+        );
 
         // Try and draw after the end_height
         env.block.height = end_height + 1;
@@ -176,7 +194,13 @@ mod tests {
 
         // Grid unchanged
         let grid = query_grid(deps.as_ref(), env);
-        assert_eq!(grid.grid[0][0], Color::Red);
+        assert_eq!(
+            grid.grid[0][0],
+            PixelInfo {
+                color: Color::Red,
+                painter: Some(Addr::unchecked(ADDR2.to_string()))
+            }
+        );
     }
 
     #[test]

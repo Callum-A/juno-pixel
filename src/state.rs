@@ -43,7 +43,14 @@ pub enum Color {
     Purple = 15,
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct PixelInfo {
+    pub color: Color,
+    pub painter: Option<Addr>,
+}
+
 pub const CONFIG: Item<Config> = Item::new("config");
 pub const DIMENSIONS: Item<Dimensions> = Item::new("dimensions");
-pub const GRID: Item<Vec<Vec<Color>>> = Item::new("grid");
+pub const GRID: Item<Vec<Vec<PixelInfo>>> = Item::new("grid");
 pub const COOLDOWNS: Map<&Addr, u64> = Map::new("cooldowns");
