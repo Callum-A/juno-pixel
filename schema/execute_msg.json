@@ -11,11 +11,23 @@
         "draw": {
           "type": "object",
           "required": [
+            "chunk_x",
+            "chunk_y",
             "color",
             "x",
             "y"
           ],
           "properties": {
+            "chunk_x": {
+              "type": "integer",
+              "format": "uint64",
+              "minimum": 0.0
+            },
+            "chunk_y": {
+              "type": "integer",
+              "format": "uint64",
+              "minimum": 0.0
+            },
             "color": {
               "$ref": "#/definitions/Color"
             },

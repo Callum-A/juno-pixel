@@ -4,12 +4,13 @@ use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response,
 use cw2::set_contract_version;
 
 use crate::error::ContractError;
-use crate::msg::{CooldownResponse, ExecuteMsg, GridResponse, InstantiateMsg, QueryMsg};
-use crate::state::{Color, Config, Dimensions, PixelInfo, CONFIG, COOLDOWNS, DIMENSIONS, GRID};
+use crate::msg::{ChunkResponse, CooldownResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
+use crate::state::{Color, Config, Dimensions, PixelInfo, CHUNKS, CONFIG, COOLDOWNS, DIMENSIONS};
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:juno-pixel";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
+const CHUNK_SIZE: u64 = 32;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -37,20 +38,9 @@ pub fn instantiate(
         width: msg.width,
         height: msg.height,
     };
-    let grid = vec![
-        vec![
-            PixelInfo {
-                color: Color::White,
-                painter: None
-            };
-            msg.height as usize
-        ];
-        msg.width as usize
-    ];
 
     CONFIG.save(deps.storage, &config)?;
     DIMENSIONS.save(deps.storage, &dimensions)?;
-    GRID.save(deps.storage, &grid)?;
 
     Ok(Response::new().add_attribute("method", "instantiate"))
 }
@@ -63,7 +53,13 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::Draw { x, y, color } => execute_draw(deps, env, info, x, y, color),
+        ExecuteMsg::Draw {
+            chunk_x,
+            chunk_y,
+            x,
+            y,
+            color,
+        } => execute_draw(deps, env, info, chunk_x, chunk_y, x, y, color),
         ExecuteMsg::UpdateAdmin { new_admin_address } => {
             execute_update_admin(deps, env, info, new_admin_address)
         }
@@ -76,10 +72,13 @@ pub fn execute(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn execute_draw(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
+    chunk_x: u64,
+    chunk_y: u64,
     x: u64,
     y: u64,
     color: Color,
@@ -89,7 +88,11 @@ pub fn execute_draw(
     let user_cooldown = COOLDOWNS
         .may_load(deps.storage, &info.sender)?
         .unwrap_or_default();
-    if x > dimensions.width || y > dimensions.height {
+    if x > CHUNK_SIZE - 1
+        || y > CHUNK_SIZE - 1
+        || chunk_x > dimensions.width - 1
+        || chunk_y > dimensions.height - 1
+    {
         return Err(ContractError::InvalidCoordinates {});
     }
 
@@ -103,13 +106,25 @@ pub fn execute_draw(
         }
     }
 
-    let mut grid = GRID.load(deps.storage)?;
-    grid[x as usize][y as usize] = PixelInfo {
+    let default = vec![
+        vec![
+            PixelInfo {
+                color: Color::White,
+                painter: None
+            };
+            CHUNK_SIZE as usize
+        ];
+        CHUNK_SIZE as usize
+    ];
+    let mut chunk = CHUNKS
+        .may_load(deps.storage, (chunk_x, chunk_y))?
+        .unwrap_or(default);
+    chunk[y as usize][x as usize] = PixelInfo {
         color,
         painter: Some(info.sender.clone()),
     };
 
-    GRID.save(deps.storage, &grid)?;
+    CHUNKS.save(deps.storage, (chunk_x, chunk_y), &chunk)?;
     COOLDOWNS.save(
         deps.storage,
         &info.sender,
@@ -182,10 +197,21 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::GetConfig {} => to_binary(&CONFIG.load(deps.storage)?),
         QueryMsg::GetDimensions {} => to_binary(&DIMENSIONS.load(deps.storage)?),
-        QueryMsg::GetGrid {} => to_binary(&GridResponse {
-            grid: GRID.load(deps.storage)?,
-        }),
         QueryMsg::GetCooldown { address } => query_cooldown(deps, address),
+        QueryMsg::GetChunk { x, y } => to_binary(&ChunkResponse {
+            grid: CHUNKS.may_load(deps.storage, (x, y))?.unwrap_or_else(|| {
+                vec![
+                    vec![
+                        PixelInfo {
+                            color: Color::White,
+                            painter: None
+                        };
+                        CHUNK_SIZE as usize
+                    ];
+                    CHUNK_SIZE as usize
+                ]
+            }),
+        }),
     }
 }
 

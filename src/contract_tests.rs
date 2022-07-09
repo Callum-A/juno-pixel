@@ -2,7 +2,7 @@
 mod tests {
     use crate::contract::{execute, instantiate, query};
     use crate::msg::ExecuteMsg::{Draw, UpdateAdmin, UpdateCooldown, UpdateEndHeight};
-    use crate::msg::{CooldownResponse, GridResponse, InstantiateMsg, QueryMsg};
+    use crate::msg::{ChunkResponse, CooldownResponse, InstantiateMsg, QueryMsg};
     use crate::state::{Color, Config, Dimensions, PixelInfo};
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
     use cosmwasm_std::{from_binary, Addr, Deps, Env};
@@ -16,8 +16,8 @@ mod tests {
         from_binary(&bin).unwrap()
     }
 
-    fn query_grid(deps: Deps, env: Env) -> GridResponse {
-        let msg = QueryMsg::GetGrid {};
+    fn query_chunk(deps: Deps, env: Env, x: u64, y: u64) -> ChunkResponse {
+        let msg = QueryMsg::GetChunk { x, y };
         let bin = query(deps, env, msg).unwrap();
         from_binary(&bin).unwrap()
     }
@@ -80,9 +80,9 @@ mod tests {
                 height: 100
             }
         );
-        let grid = query_grid(deps.as_ref(), env);
-        assert_eq!(grid.grid.len(), 100);
-        assert_eq!(grid.grid[0].len(), 100);
+        let grid = query_chunk(deps.as_ref(), env, 0, 0);
+        assert_eq!(grid.grid.len(), 32);
+        assert_eq!(grid.grid[0].len(), 32);
     }
 
     #[test]
@@ -107,16 +107,30 @@ mod tests {
         let cooldown = query_cooldown(deps.as_ref(), env.clone(), ADDR1.to_string());
         assert_eq!(cooldown.current_cooldown, 0);
 
-        // Try and draw with invalid dimensions
+        // Try and draw with invalid dimensions (within the chunk)
         let msg = Draw {
-            x: 101,
-            y: 101,
+            chunk_x: 0,
+            chunk_y: 0,
+            x: 32,
+            y: 32,
+            color: Color::Black,
+        };
+        execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap_err();
+
+        // Try and draw with invalid dimensions (chunk dimensions)
+        let msg = Draw {
+            chunk_x: 100,
+            chunk_y: 100,
+            x: 16,
+            y: 16,
             color: Color::Black,
         };
         execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap_err();
 
         // Successful draw ADDR1
         let msg = Draw {
+            chunk_x: 0,
+            chunk_y: 0,
             x: 0,
             y: 0,
             color: Color::Black,
@@ -124,6 +138,8 @@ mod tests {
         execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
         // Successful draw ADDR2
         let msg = Draw {
+            chunk_x: 0,
+            chunk_y: 0,
             x: 1,
             y: 0,
             color: Color::Red,
@@ -137,7 +153,7 @@ mod tests {
         let cooldown = query_cooldown(deps.as_ref(), env.clone(), ADDR2.to_string());
         assert_eq!(cooldown.current_cooldown, start_height + 30);
 
-        let grid = query_grid(deps.as_ref(), env.clone());
+        let grid = query_chunk(deps.as_ref(), env.clone(), 0, 0);
         assert_eq!(
             grid.grid[0][0],
             PixelInfo {
@@ -146,7 +162,7 @@ mod tests {
             }
         );
         assert_eq!(
-            grid.grid[1][0],
+            grid.grid[0][1],
             PixelInfo {
                 color: Color::Red,
                 painter: Some(Addr::unchecked(ADDR2.to_string()))
@@ -155,6 +171,8 @@ mod tests {
 
         // Try and draw prior to cooldown, will error
         let msg = Draw {
+            chunk_x: 0,
+            chunk_y: 0,
             x: 0,
             y: 0,
             color: Color::Black,
@@ -164,6 +182,8 @@ mod tests {
         // Override existing color after cooldown
         env.block.height = start_height + 30;
         let msg = Draw {
+            chunk_x: 0,
+            chunk_y: 0,
             x: 0,
             y: 0,
             color: Color::Red,
@@ -174,7 +194,7 @@ mod tests {
         let cooldown = query_cooldown(deps.as_ref(), env.clone(), ADDR2.to_string());
         assert_eq!(cooldown.current_cooldown, start_height + 30 + 30);
 
-        let grid = query_grid(deps.as_ref(), env.clone());
+        let grid = query_chunk(deps.as_ref(), env.clone(), 0, 0);
         assert_eq!(
             grid.grid[0][0],
             PixelInfo {
@@ -186,6 +206,8 @@ mod tests {
         // Try and draw after the end_height
         env.block.height = end_height + 1;
         let msg = Draw {
+            chunk_x: 0,
+            chunk_y: 0,
             x: 0,
             y: 0,
             color: Color::Green,
@@ -193,7 +215,7 @@ mod tests {
         execute(deps.as_mut(), env.clone(), info, msg).unwrap_err();
 
         // Grid unchanged
-        let grid = query_grid(deps.as_ref(), env);
+        let grid = query_chunk(deps.as_ref(), env, 0, 0);
         assert_eq!(
             grid.grid[0][0],
             PixelInfo {

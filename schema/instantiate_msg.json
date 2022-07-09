@@ -26,11 +26,13 @@
       "minimum": 0.0
     },
     "height": {
+      "description": "How many chunks high",
       "type": "integer",
       "format": "uint64",
       "minimum": 0.0
     },
     "width": {
+      "description": "How many chunks wide",
       "type": "integer",
       "format": "uint64",
       "minimum": 0.0
