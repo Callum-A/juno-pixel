@@ -29,7 +29,9 @@
               "minimum": 0.0
             },
             "color": {
-              "$ref": "#/definitions/Color"
+              "type": "integer",
+              "format": "uint8",
+              "minimum": 0.0
             },
             "x": {
               "type": "integer",
@@ -110,28 +112,5 @@
       },
       "additionalProperties": false
     }
-  ],
-  "definitions": {
-    "Color": {
-      "type": "string",
-      "enum": [
-        "white",
-        "light_gray",
-        "gray",
-        "black",
-        "pink",
-        "red",
-        "orange",
-        "brown",
-        "yellow",
-        "light_green",
-        "green",
-        "turquoise",
-        "light_blue",
-        "blue",
-        "magenta",
-        "purple"
-      ]
-    }
-  }
+  ]
 }
