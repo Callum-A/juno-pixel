@@ -26,29 +26,8 @@ pub struct Dimensions {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
-pub enum Color {
-    White = 0,
-    LightGray = 1,
-    Gray = 2,
-    Black = 3,
-    Pink = 4,
-    Red = 5,
-    Orange = 6,
-    Brown = 7,
-    Yellow = 8,
-    LightGreen = 9,
-    Green = 10,
-    Turquoise = 11,
-    LightBlue = 12,
-    Blue = 13,
-    Magenta = 14,
-    Purple = 15,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
 pub struct PixelInfo {
-    pub color: Color,
+    pub color: u8,
     pub painter: Option<Addr>,
 }
 
