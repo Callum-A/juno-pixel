@@ -1,4 +1,4 @@
-use crate::state::{Color, PixelInfo};
+use crate::state::PixelInfo;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -21,7 +21,7 @@ pub enum ExecuteMsg {
         chunk_y: u64,
         x: u64,
         y: u64,
-        color: Color,
+        color: u8,
     },
     UpdateAdmin {
         new_admin_address: String,

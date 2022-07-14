@@ -5,12 +5,20 @@ use cw2::set_contract_version;
 
 use crate::error::ContractError;
 use crate::msg::{ChunkResponse, CooldownResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
-use crate::state::{Color, Config, Dimensions, PixelInfo, CHUNKS, CONFIG, COOLDOWNS, DIMENSIONS};
+use crate::state::{Config, Dimensions, PixelInfo, CHUNKS, CONFIG, COOLDOWNS, DIMENSIONS};
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:juno-pixel";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 const CHUNK_SIZE: u64 = 32;
+
+fn validate_color(color_code: u8) -> Result<(), ContractError> {
+    if color_code > 15 {
+        return Err(ContractError::InvalidColor {});
+    }
+
+    Ok(())
+}
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -81,13 +89,14 @@ pub fn execute_draw(
     chunk_y: u64,
     x: u64,
     y: u64,
-    color: Color,
+    color: u8,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     let dimensions = DIMENSIONS.load(deps.storage)?;
     let user_cooldown = COOLDOWNS
         .may_load(deps.storage, &info.sender)?
         .unwrap_or_default();
+    validate_color(color)?;
     if x > CHUNK_SIZE - 1
         || y > CHUNK_SIZE - 1
         || chunk_x > dimensions.width - 1
@@ -109,7 +118,7 @@ pub fn execute_draw(
     let default = vec![
         vec![
             PixelInfo {
-                color: Color::White,
+                color: 0, // White
                 painter: None
             };
             CHUNK_SIZE as usize
@@ -203,7 +212,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
                 vec![
                     vec![
                         PixelInfo {
-                            color: Color::White,
+                            color: 0, // White
                             painter: None
                         };
                         CHUNK_SIZE as usize

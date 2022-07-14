@@ -15,6 +15,9 @@ pub enum ContractError {
     #[error("Invalid coordinates, must be within the width and height of the grid")]
     InvalidCoordinates {},
 
+    #[error("Invalid color, color code must be between 0 and 15")]
+    InvalidColor {},
+
     #[error("This address is still on cooldown, please wait until you can draw again")]
     StillOnCooldown {},
 

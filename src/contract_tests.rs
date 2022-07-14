@@ -3,7 +3,7 @@ mod tests {
     use crate::contract::{execute, instantiate, query};
     use crate::msg::ExecuteMsg::{Draw, UpdateAdmin, UpdateCooldown, UpdateEndHeight};
     use crate::msg::{ChunkResponse, CooldownResponse, InstantiateMsg, QueryMsg};
-    use crate::state::{Color, Config, Dimensions, PixelInfo};
+    use crate::state::{Config, Dimensions, PixelInfo};
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
     use cosmwasm_std::{from_binary, Addr, Deps, Env};
 
@@ -107,13 +107,23 @@ mod tests {
         let cooldown = query_cooldown(deps.as_ref(), env.clone(), ADDR1.to_string());
         assert_eq!(cooldown.current_cooldown, 0);
 
+        // Try and draw with invalid color code (outside 0-15 range)
+        let msg = Draw {
+            chunk_x: 0,
+            chunk_y: 0,
+            x: 0,
+            y: 0,
+            color: 16, // Unrecognised
+        };
+        execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap_err();
+
         // Try and draw with invalid dimensions (within the chunk)
         let msg = Draw {
             chunk_x: 0,
             chunk_y: 0,
             x: 32,
             y: 32,
-            color: Color::Black,
+            color: 3, // Black
         };
         execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap_err();
 
@@ -123,7 +133,7 @@ mod tests {
             chunk_y: 100,
             x: 16,
             y: 16,
-            color: Color::Black,
+            color: 3, // Black
         };
         execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap_err();
 
@@ -133,7 +143,7 @@ mod tests {
             chunk_y: 0,
             x: 0,
             y: 0,
-            color: Color::Black,
+            color: 3, // Black
         };
         execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
         // Successful draw ADDR2
@@ -142,7 +152,7 @@ mod tests {
             chunk_y: 0,
             x: 1,
             y: 0,
-            color: Color::Red,
+            color: 5, // Red
         };
         execute(deps.as_mut(), env.clone(), mock_info(ADDR2, &[]), msg).unwrap();
 
@@ -157,14 +167,14 @@ mod tests {
         assert_eq!(
             grid.grid[0][0],
             PixelInfo {
-                color: Color::Black,
+                color: 3, // Black
                 painter: Some(Addr::unchecked(ADDR1.to_string()))
             }
         );
         assert_eq!(
             grid.grid[0][1],
             PixelInfo {
-                color: Color::Red,
+                color: 5, // Red
                 painter: Some(Addr::unchecked(ADDR2.to_string()))
             }
         );
@@ -175,7 +185,7 @@ mod tests {
             chunk_y: 0,
             x: 0,
             y: 0,
-            color: Color::Black,
+            color: 3, // Black
         };
         execute(deps.as_mut(), env.clone(), mock_info(ADDR2, &[]), msg).unwrap_err();
 
@@ -186,7 +196,7 @@ mod tests {
             chunk_y: 0,
             x: 0,
             y: 0,
-            color: Color::Red,
+            color: 5, // Red
         };
         execute(deps.as_mut(), env.clone(), mock_info(ADDR2, &[]), msg).unwrap();
 
@@ -198,7 +208,7 @@ mod tests {
         assert_eq!(
             grid.grid[0][0],
             PixelInfo {
-                color: Color::Red,
+                color: 5, // Red
                 painter: Some(Addr::unchecked(ADDR2.to_string()))
             }
         );
@@ -210,7 +220,7 @@ mod tests {
             chunk_y: 0,
             x: 0,
             y: 0,
-            color: Color::Green,
+            color: 10, // Green
         };
         execute(deps.as_mut(), env.clone(), info, msg).unwrap_err();
 
@@ -219,7 +229,7 @@ mod tests {
         assert_eq!(
             grid.grid[0][0],
             PixelInfo {
-                color: Color::Red,
+                color: 5, // Red
                 painter: Some(Addr::unchecked(ADDR2.to_string()))
             }
         );
